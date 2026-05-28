@@ -58,6 +58,50 @@
   <!-- 게임오버 재시작 버튼 -->
   <button id="restart-btn">▶ 다시 시작</button>
 
+  <!-- 단어 관리 열기 버튼 (시작 화면에서만 노출) -->
+  <button id="open-word-editor" type="button">📝 내 단어 관리</button>
+
+  <!-- 단어 관리 모달 -->
+  <div id="word-editor-modal" class="hidden" role="dialog" aria-modal="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2>📝 내 단어 관리</h2>
+        <button id="close-word-editor" type="button" aria-label="닫기">✕</button>
+      </div>
+
+      <div class="modal-add-form">
+        <input id="new-word-input" type="text" placeholder="추가할 단어 (공백 없이)" maxlength="20" />
+        <select id="new-word-difficulty">
+          <option value="easy">쉬움</option>
+          <option value="medium" selected>보통</option>
+          <option value="hard">어려움</option>
+        </select>
+        <button id="add-word-btn" type="button">+ 추가</button>
+      </div>
+      <div id="word-editor-feedback" class="modal-feedback"></div>
+
+      <div class="modal-lists">
+        <section class="word-section" data-diff="easy">
+          <h3>🟢 쉬움 <span class="count">0</span></h3>
+          <ul class="word-list" data-diff="easy"></ul>
+        </section>
+        <section class="word-section" data-diff="medium">
+          <h3>🟡 보통 <span class="count">0</span></h3>
+          <ul class="word-list" data-diff="medium"></ul>
+        </section>
+        <section class="word-section" data-diff="hard">
+          <h3>🔴 어려움 <span class="count">0</span></h3>
+          <ul class="word-list" data-diff="hard"></ul>
+        </section>
+      </div>
+
+      <div class="modal-footer">
+        <small>여기서 추가한 단어는 기본 단어와 함께 게임에 나옵니다.</small>
+      </div>
+    </div>
+  </div>
+
   <!-- ES 모듈로 main.js 로드 -->
   <script type="module" src="js/main.js"></script>
 

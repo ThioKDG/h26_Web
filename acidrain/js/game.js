@@ -6,13 +6,16 @@ import { Renderer } from './renderer.js';
 import { InputHandler } from './input.js';
 import { UI } from './ui.js';
 import { loadRanking, isHighScore, addEntry } from './ranking.js';
+import { mergeWithDefaults } from './customWords.js';
+import { WordEditor } from './wordEditor.js';
 
 const MAX_HP = 5;
 const SCORE_PER_LEVEL = 800;
 
 export class Game {
   constructor(wordData) {
-    this.wordData = wordData;
+    this._defaultWordData = wordData;
+    this.wordData = mergeWithDefaults(wordData);
 
     // DOM 요소
     this.canvas = document.getElementById('game-canvas');
@@ -35,6 +38,8 @@ export class Game {
       level: 1,
       combo: 0,
       newRankIndex: -1,  // 방금 등록된 랭킹 인덱스 (하이라이트용)
+      stats: this._freshStats(),
+      freezeUntil: 0,    // 시간정지 파워업 종료 시각 (ms)
     };
 
     // 랭킹 데이터 (현재 모드 기준으로 로드)
@@ -49,9 +54,14 @@ export class Game {
 
     // 모듈 초기화
     this.renderer = new Renderer(this.canvas);
-    this.spawner = new Spawner(wordData, this.canvas);
+    this.spawner = new Spawner(this.wordData, this.canvas);
     this.input = new InputHandler(this.inputEl);
     this.ui = new UI();
+    this.wordEditor = new WordEditor();
+    this.wordEditor.onWordsChanged = () => {
+      this.wordData = mergeWithDefaults(this._defaultWordData);
+      this.spawner.setWordData(this.wordData);
+    };
 
     this._bindCallbacks();
     this._bindEvents();
@@ -66,6 +76,15 @@ export class Game {
 
     // 시작 화면 표시
     this.state.status = 'idle';
+    this._updateEditorButtonVisibility();
+  }
+
+  // 단어 관리 버튼은 idle/gameover 상태에서만 보임 (게임 중에는 가림)
+  _updateEditorButtonVisibility() {
+    const btn = document.getElementById('open-word-editor');
+    if (!btn) return;
+    const visible = this.state.status === 'idle' || this.state.status === 'gameover';
+    btn.style.display = visible ? 'inline-flex' : 'none';
   }
 
   // ─── 크레이지 모드 ─────────────────────────────────────
@@ -110,12 +129,48 @@ export class Game {
       level: 1,
       combo: 0,
       newRankIndex: -1,
+      stats: this._freshStats(true),  // startTime을 지금으로
+      freezeUntil: 0,
     };
 
     this.spawner.start();
     this.input.enable();
     this.inputEl.placeholder = '단어를 입력하세요';
     this.ui.update({ score: 0, hp: MAX_HP, maxHp: MAX_HP, level: 1 });
+    this._updateEditorButtonVisibility();
+  }
+
+  _freshStats(withStart = false) {
+    return {
+      startTime: withStart ? performance.now() : 0,
+      endTime: 0,
+      matchedWords: 0,
+      matchedChars: 0,
+      missedWords: 0,
+      reactionTimes: [],  // 각 단어를 잡기까지 걸린 시간 (ms)
+    };
+  }
+
+  // 게임 종료/결과 계산을 위한 통계 헬퍼
+  _computeStats() {
+    const s = this.state.stats;
+    const elapsedMs = (s.endTime || performance.now()) - (s.startTime || performance.now());
+    const minutes = elapsedMs / 60000;
+    // WPM: 표준 공식 (chars / 5) / minutes
+    const wpm = minutes > 0 ? Math.round((s.matchedChars / 5) / minutes) : 0;
+    const totalAttempts = s.matchedWords + s.missedWords;
+    const accuracy = totalAttempts > 0 ? Math.round((s.matchedWords / totalAttempts) * 100) : 0;
+    const avgReaction = s.reactionTimes.length > 0
+      ? Math.round(s.reactionTimes.reduce((a, b) => a + b, 0) / s.reactionTimes.length)
+      : 0;
+    return {
+      wpm,
+      accuracy,
+      avgReactionMs: avgReaction,
+      matchedWords: s.matchedWords,
+      missedWords: s.missedWords,
+      elapsedSec: Math.round(elapsedMs / 1000),
+    };
   }
 
   restart() {
@@ -191,7 +246,21 @@ export class Game {
   // ─── 게임 이벤트 핸들러 ───────────────────────────────────
   _onWordMatched(word) {
     const { state } = this;
+
+    // 파워업 단어면 별도 효과 처리 후 종료 (점수/콤보 없음)
+    if (word.powerUp) {
+      this._triggerPowerUp(word);
+      return;
+    }
+
     state.combo++;
+
+    // 통계 기록
+    state.stats.matchedWords++;
+    state.stats.matchedChars += word.text.length;
+    if (word.spawnTime) {
+      state.stats.reactionTimes.push(performance.now() - word.spawnTime);
+    }
 
     // 점수 계산: 단어 길이 * 콤보 보너스 (레벨은 제외 — 점수↑→레벨↑→점수↑ 피드백 루프 방지)
     const comboBonus = Math.min(state.combo, 5);
@@ -224,10 +293,72 @@ export class Game {
     this.ui.showCombo(state.combo);
   }
 
+  // 파워업 단어 매치 시 효과 발동
+  _triggerPowerUp(word) {
+    const { state } = this;
+    word.startDying();
+
+    // 매칭 자체에 작은 보너스 점수
+    state.score += 50;
+    state.stats.matchedWords++;
+    state.stats.matchedChars += word.text.length;
+    if (word.spawnTime) {
+      state.stats.reactionTimes.push(performance.now() - word.spawnTime);
+    }
+
+    // 플래시 이펙트
+    this._flashes.push({
+      x: word.x, y: word.y, text: word.text,
+      alpha: 1, life: 40,
+    });
+
+    switch (word.powerUp) {
+      case 'freeze':
+        state.freezeUntil = performance.now() + 3000;  // 3초 시간정지
+        this.ui.showMessage('❄ 시간 정지 3초!', 'info');
+        break;
+      case 'bomb':
+        // 현재 화면의 모든 일반 단어 제거 + 각 단어 길이만큼 보너스 점수
+        let bombBonus = 0;
+        for (const w of state.words) {
+          if (w !== word && !w.isDying && !w.powerUp) {
+            w.startDying();
+            bombBonus += w.text.length * 10;
+          }
+        }
+        state.score += bombBonus;
+        this.ui.showMessage(`💣 폭탄! 모든 단어 제거 (+${bombBonus}점)`, 'levelup');
+        break;
+      case 'heal':
+        if (state.hp < MAX_HP) {
+          state.hp++;
+          this.ui.showMessage('💖 체력 +1!', 'levelup');
+        } else {
+          state.score += 200;  // HP 만땅이면 점수 보너스로 대체
+          this.ui.showMessage('💖 HP 가득 → +200 보너스!', 'levelup');
+        }
+        break;
+    }
+
+    this.ui.update({
+      score: state.score,
+      hp: state.hp,
+      maxHp: MAX_HP,
+      level: state.level,
+    });
+  }
+
   _onWordMissed(word) {
     const { state } = this;
+
+    // 파워업 단어를 놓치는 건 페널티 없음 (그냥 사라짐)
+    if (word.powerUp) {
+      return;
+    }
+
     state.combo = 0;
     state.hp--;
+    state.stats.missedWords++;
 
     this.ui.showDamage();
     this.ui.showMessage(`"${word.text}" 놓쳤습니다! 💥`, 'danger');
@@ -257,6 +388,7 @@ export class Game {
 
   _gameOver() {
     const { state } = this;
+    state.stats.endTime = performance.now();
     this.spawner.stop();
 
     // TOP 10 자격이 있으면 이름 입력 단계로 진입 (현재 모드 기준)
@@ -273,6 +405,7 @@ export class Game {
     state.status = 'gameover';
     this.input.disable();
     if (this.restartBtn) this.restartBtn.style.display = 'block';
+    this._updateEditorButtonVisibility();
   }
 
   // naming 상태에서 Enter → 현재 모드의 랭킹에 저장
@@ -285,6 +418,7 @@ export class Game {
     this.inputEl.value = '';
     this.inputEl.placeholder = '타이핑을 시작하면 게임이 시작됩니다';
     if (this.restartBtn) this.restartBtn.style.display = 'block';
+    this._updateEditorButtonVisibility();
   }
 
   // ─── 게임 루프 ────────────────────────────────────────────
@@ -305,14 +439,21 @@ export class Game {
     const { state } = this;
     if (state.status !== 'playing') return;
 
-    // 새 단어 생성
-    const newWord = this.spawner.update(delta, state.level);
-    if (newWord) state.words.push(newWord);
+    const now = performance.now();
+    const isFrozen = now < state.freezeUntil;
 
-    // 단어 위치 업데이트
+    // 새 단어 생성 (시간정지 중이면 생성 안 함)
+    if (!isFrozen) {
+      const newWord = this.spawner.update(delta, state.level);
+      if (newWord) state.words.push(newWord);
+    }
+
+    // 단어 위치 업데이트 (시간정지 중이면 죽어가는 단어만 업데이트)
     const toRemove = [];
     for (const word of state.words) {
-      word.update();
+      if (!isFrozen || word.isDying) {
+        word.update();
+      }
 
       if (word.isDying && word.isFullyFaded()) {
         toRemove.push(word);
@@ -358,6 +499,12 @@ export class Game {
 
     renderer.drawWords(state.words);
 
+    // 시간정지 파워업 오버레이
+    if (state.status === 'playing') {
+      const freezeRem = state.freezeUntil - performance.now();
+      if (freezeRem > 0) renderer.drawFreezeOverlay(freezeRem);
+    }
+
     // 플래시 이펙트
     for (const f of this._flashes) {
       this.canvas.getContext('2d').save();
@@ -375,7 +522,14 @@ export class Game {
     }
 
     if (state.status === 'gameover') {
-      renderer.drawGameOver(state.score, state.level, this.ranking, state.newRankIndex, mode);
+      renderer.drawGameOver(
+        state.score,
+        state.level,
+        this.ranking,
+        state.newRankIndex,
+        mode,
+        this._computeStats()
+      );
     }
   }
 }

@@ -241,16 +241,18 @@ html, body {
   box-shadow: 0 0 50px var(--accent-glow);
 }
 
-/* ── 크레이지 모드 토글 버튼 ───────────── */
-#crazy-toggle {
+/* ── 상단 우측 액션 버튼 공통 (크레이지 토글 + 내 단어 관리) ── */
+#crazy-toggle,
+#open-word-editor {
   position: fixed;
-  top: 72px;
-  right: 16px;
+  top: 100px;                  /* HUD 아래 여유 공간 확보 */
   z-index: 25;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 8px 16px;
+  min-width: 220px;            /* 두 버튼 동일 너비로 통일감 */
+  padding: 10px 18px;
   font-family: 'Orbitron', monospace;
   font-size: 12px;
   font-weight: 700;
@@ -264,10 +266,239 @@ html, body {
   transition: color 0.2s, border-color 0.2s, transform 0.15s;
 }
 
-#crazy-toggle:hover {
+#crazy-toggle:hover,
+#open-word-editor:hover {
   transform: scale(1.05);
   color: var(--text);
   border-color: var(--accent);
+}
+
+#open-word-editor {
+  right: 260px;
+  display: none;               /* JS가 idle/gameover에서만 보이게 함 */
+}
+
+/* ── 단어 관리 모달 ──────────────────── */
+#word-editor-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#word-editor-modal.hidden { display: none; }
+
+#word-editor-modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+#word-editor-modal .modal-panel {
+  position: relative;
+  background: linear-gradient(180deg, #0e1830, #0a0e1a);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  box-shadow: 0 0 40px var(--accent-glow);
+  width: min(720px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px;
+  color: var(--text);
+}
+
+#word-editor-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hud-border);
+}
+
+#word-editor-modal .modal-header h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 20px;
+  color: var(--accent);
+}
+
+#close-word-editor {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+#close-word-editor:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.modal-add-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.modal-add-form input,
+.modal-add-form select {
+  padding: 10px 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--hud-border);
+  border-radius: 8px;
+  outline: none;
+}
+
+.modal-add-form input {
+  flex: 1;
+}
+
+.modal-add-form input:focus,
+.modal-add-form select:focus {
+  border-color: var(--accent);
+}
+
+/* 난이도 드롭다운: 옵션이 시스템 기본 색상으로 잘 안 보이는 문제 해결 */
+.modal-add-form select {
+  min-width: 100px;
+  cursor: pointer;
+  /* 우측 화살표 자리 확보 */
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2388bbff' d='M6 8L0 0h12z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+
+.modal-add-form select option {
+  background-color: #0e1830;     /* 다크 패널 컬러로 통일 */
+  color: var(--text);
+  font-weight: 700;
+  padding: 8px;
+}
+
+.modal-add-form select option:checked {
+  background-color: var(--accent);
+  color: #ffffff;
+}
+
+#add-word-btn {
+  padding: 10px 20px;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  color: var(--bg);
+  background: linear-gradient(135deg, var(--accent), #66aaff);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.15s;
+}
+
+#add-word-btn:hover { transform: scale(1.05); }
+
+.modal-feedback {
+  min-height: 20px;
+  margin: 8px 4px;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+.modal-feedback.success { color: var(--success); }
+
+.modal-lists {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .modal-lists { grid-template-columns: 1fr; }
+}
+
+.word-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--hud-border);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.word-section h3 {
+  font-size: 13px;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-dim);
+}
+
+.word-section h3 .count {
+  color: var(--accent);
+  margin-left: 6px;
+}
+
+.word-list {
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.word-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.word-list li .word-text {
+  font-weight: 700;
+}
+
+.word-list li button {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.word-list li button:hover {
+  background: rgba(255, 51, 68, 0.15);
+}
+
+.modal-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hud-border);
+  color: var(--text-dim);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ── 크레이지 모드 토글 버튼 (공통 규칙 + 위치 지정) ── */
+#crazy-toggle {
+  right: 16px;
 }
 
 #crazy-toggle .crazy-icon {

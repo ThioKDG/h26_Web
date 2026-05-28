@@ -151,7 +151,7 @@ export class Renderer {
   }
 
   // ─── 게임오버 화면 ────────────────────────────────────
-  drawGameOver(score, level, ranking = [], newRankIndex = -1, mode = 'normal') {
+  drawGameOver(score, level, ranking = [], newRankIndex = -1, mode = 'normal', stats = null) {
     const ctx = this.ctx;
     const w = this.canvas.width;
     const h = this.canvas.height;
@@ -161,10 +161,10 @@ export class Renderer {
     ctx.fillRect(0, 0, w, h);
     ctx.restore();
 
-    const titleBlockH = 130;
+    const titleBlockH = stats ? 180 : 130;  // 통계 있으면 더 높게
     const gap = 30;
     const rankH = this._rankingListHeight(ranking);
-    const btnReserve = 80;  // 재시작 버튼 자리
+    const btnReserve = 80;
     const total = titleBlockH + gap + rankH + btnReserve;
 
     const top = this._layoutCenter(total);
@@ -185,8 +185,19 @@ export class Renderer {
     ctx.fillText(
       `최종 점수: ${score.toLocaleString()}점  /  레벨 ${level}`,
       w / 2,
-      top + 95
+      top + 90
     );
+
+    // 통계 한 줄 표시
+    if (stats) {
+      ctx.font = `16px ${this.fonts}`;
+      ctx.fillStyle = '#aaccee';
+      ctx.fillText(
+        `⌨ ${stats.wpm} WPM   ✓ 정확도 ${stats.accuracy}%   ⏱ 평균 ${stats.avgReactionMs}ms   📝 ${stats.matchedWords}맞춤 / ${stats.missedWords}놓침`,
+        w / 2,
+        top + 130
+      );
+    }
     ctx.restore();
 
     this._drawRankingList(ranking, top + titleBlockH + gap, newRankIndex, mode);
@@ -328,6 +339,28 @@ export class Renderer {
       ctx.font = `13px ${this.fonts}`;
       ctx.fillText(`Lv.${entry.level}`, panelX + panelW - 18, rowCenterY);
     }
+    ctx.restore();
+  }
+
+  // 시간정지 파워업 활성 시 푸른 오버레이 + 잔여 시간
+  drawFreezeOverlay(remainingMs) {
+    const ctx = this.ctx;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+
+    ctx.save();
+    // 푸른 틴트
+    ctx.fillStyle = 'rgba(100, 180, 255, 0.12)';
+    ctx.fillRect(0, 0, w, h);
+
+    // 상단에 큰 안내
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold 32px ${this.fonts}`;
+    ctx.fillStyle = '#aaeeff';
+    ctx.shadowColor = '#33aaff';
+    ctx.shadowBlur = 24;
+    ctx.fillText(`❄ FROZEN ${(remainingMs / 1000).toFixed(1)}s`, w / 2, 110);
     ctx.restore();
   }
 

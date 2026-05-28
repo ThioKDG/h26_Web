@@ -25,6 +25,15 @@ export class Spawner {
     this.crazyMode = !!crazy;
   }
 
+  // 단어 데이터 교체 (커스텀 단어 추가/삭제 후 호출)
+  setWordData(wordData) {
+    this.wordData = wordData;
+    this._crazyPool = [
+      ...(wordData.medium || []),
+      ...(wordData.hard || []),
+    ].filter((w) => w && w.length >= 4);
+  }
+
   // 게임 중 크레이지 토글 시도 시 호출됨 → 속도 + 생성 빈도 증가
   // 최대 3배까지만 누적, { mul, capped } 반환
   boostDifficulty(amount = 0.25) {
@@ -61,16 +70,38 @@ export class Spawner {
   }
 
   _spawnWord(level) {
-    const text = this._getRandomWord(level);
     const padding = 60;
     const x = padding + Math.random() * (this.canvas.width - padding * 2);
     const speed = this._getSpeed(level);
 
+    // 5% 확률로 파워업 단어 생성 (레벨 2 이상부터)
+    if (level >= 2 && Math.random() < 0.05) {
+      return this._spawnPowerUp(x, speed);
+    }
+
+    const text = this._getRandomWord(level);
     return new WordDrop({
       text,
       x,
       speed,
       canvasHeight: this.canvas.height,
+    });
+  }
+
+  _spawnPowerUp(x, speed) {
+    const types = ['freeze', 'bomb', 'heal'];
+    const powerUp = types[Math.floor(Math.random() * types.length)];
+    const textByType = {
+      freeze: '시간정지',
+      bomb:   '폭탄제거',
+      heal:   '체력회복',
+    };
+    return new WordDrop({
+      text: textByType[powerUp],
+      x,
+      speed: speed * 0.85,   // 파워업은 약간 느리게 → 잡을 기회
+      canvasHeight: this.canvas.height,
+      powerUp,
     });
   }
 
