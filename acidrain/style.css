@@ -1,0 +1,375 @@
+/* style.css */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Orbitron:wght@700;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0a0e1a;
+  --accent: #4488ff;
+  --accent-glow: rgba(68, 136, 255, 0.4);
+  --success: #00ff88;
+  --danger: #ff3344;
+  --warning: #ffaa00;
+  --text: #e8f4ff;
+  --text-dim: #6688aa;
+  --hud-bg: rgba(10, 20, 40, 0.85);
+  --hud-border: rgba(68, 136, 255, 0.3);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: 'Noto Sans KR', sans-serif;
+  color: var(--text);
+  user-select: none;
+}
+
+/* ── 캔버스 ───────────────────────────── */
+#game-canvas {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── HUD 레이어 ───────────────────────── */
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px;
+  background: var(--hud-bg);
+  border-bottom: 1px solid var(--hud-border);
+  backdrop-filter: blur(8px);
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.hud-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-family: 'Orbitron', monospace;
+}
+
+.hud-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent-glow);
+  min-width: 80px;
+}
+
+/* HP 바 */
+.hp-bar-container {
+  flex: 1;
+  max-width: 200px;
+}
+
+#hp-bar-wrap {
+  height: 10px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 5px;
+  border: 1px solid var(--hud-border);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+#hp-bar-inner {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #00cc66, #00ff88);
+  border-radius: 5px;
+  transition: width 0.3s ease, background 0.5s ease;
+}
+
+#hp-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── 입력창 레이어 ────────────────────── */
+#input-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: 16px 24px;
+  background: var(--hud-bg);
+  border-top: 1px solid var(--hud-border);
+  backdrop-filter: blur(8px);
+}
+
+#word-input {
+  width: 100%;
+  max-width: 500px;
+  padding: 14px 24px;
+  font-size: 20px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+  border: 2px solid var(--hud-border);
+  border-radius: 12px;
+  outline: none;
+  text-align: center;
+  letter-spacing: 3px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#word-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), inset 0 0 10px rgba(68,136,255,0.05);
+}
+
+#word-input::placeholder {
+  color: var(--text-dim);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* ── 콤보 표시 ────────────────────────── */
+#combo-display {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  font-family: 'Orbitron', monospace;
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--success);
+  text-shadow: 0 0 30px var(--success);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+#combo-display.visible {
+  opacity: 1;
+  animation: comboPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── 메시지 표시 ──────────────────────── */
+#message-display {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+}
+
+#message-display.visible {
+  opacity: 1;
+}
+
+#message-display.danger {
+  background: rgba(255, 51, 68, 0.2);
+  border: 1px solid rgba(255, 51, 68, 0.5);
+  color: #ff6677;
+}
+
+#message-display.levelup {
+  background: rgba(0, 255, 136, 0.15);
+  border: 1px solid rgba(0, 255, 136, 0.4);
+  color: var(--success);
+}
+
+#message-display.info {
+  background: rgba(68, 136, 255, 0.15);
+  border: 1px solid var(--hud-border);
+  color: var(--accent);
+}
+
+/* ── 재시작 버튼 ──────────────────────── */
+#restart-btn {
+  display: none;
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 14px 40px;
+  font-size: 18px;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  color: var(--bg);
+  background: linear-gradient(135deg, var(--accent), #66aaff);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  box-shadow: 0 0 30px var(--accent-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#restart-btn:hover {
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 0 50px var(--accent-glow);
+}
+
+/* ── 크레이지 모드 토글 버튼 ───────────── */
+#crazy-toggle {
+  position: fixed;
+  top: 72px;
+  right: 16px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  background: var(--hud-bg);
+  border: 1px solid var(--hud-border);
+  border-radius: 20px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+#crazy-toggle:hover {
+  transform: scale(1.05);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+#crazy-toggle .crazy-icon {
+  font-size: 16px;
+  filter: grayscale(1) opacity(0.5);
+  transition: filter 0.3s;
+}
+
+body.crazy-mode #crazy-toggle {
+  color: #fff;
+  animation: rainbowBorder 2.5s linear infinite;
+}
+
+body.crazy-mode #crazy-toggle .crazy-icon {
+  filter: none;
+  animation: rainbowHue 2.5s linear infinite;
+}
+
+/* ── 크레이지 모드: HUD/입력바 전체 무지개 채우기 ── */
+@keyframes rainbowBorder {
+  0%   { border-color: #ff3366; box-shadow: 0 0 22px rgba(255, 51, 102, 0.7); }
+  16%  { border-color: #ffaa33; box-shadow: 0 0 22px rgba(255, 170, 51, 0.7); }
+  33%  { border-color: #ffee44; box-shadow: 0 0 22px rgba(255, 238, 68, 0.7); }
+  50%  { border-color: #66ff88; box-shadow: 0 0 22px rgba(102, 255, 136, 0.7); }
+  66%  { border-color: #44ddff; box-shadow: 0 0 22px rgba(68, 221, 255, 0.7); }
+  83%  { border-color: #aa66ff; box-shadow: 0 0 22px rgba(170, 102, 255, 0.7); }
+  100% { border-color: #ff3366; box-shadow: 0 0 22px rgba(255, 51, 102, 0.7); }
+}
+
+@keyframes rainbowHue {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* HUD와 입력바 전체 영역을 무지개 그라디언트로 채우고 좌우로 부드럽게 일렁임 */
+@keyframes rainbowShimmer {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+body.crazy-mode #hud,
+body.crazy-mode #input-area {
+  background: linear-gradient(90deg,
+    rgba(255,  51, 102, 0.85),
+    rgba(255, 170,  51, 0.85),
+    rgba(255, 238,  68, 0.85),
+    rgba(102, 255, 136, 0.85),
+    rgba( 68, 221, 255, 0.85),
+    rgba(170, 102, 255, 0.85),
+    rgba(255,  51, 102, 0.85)
+  );
+  background-size: 120% 100%;
+  background-repeat: no-repeat;
+  animation: rainbowShimmer 1.2s ease-in-out infinite alternate;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* 무지개 배경 위에서 가독성을 위해 HUD 라벨/값을 흰색 + 검은 외곽선 */
+body.crazy-mode .hud-label,
+body.crazy-mode #hp-text {
+  color: #ffffff;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+}
+
+body.crazy-mode .hud-value {
+  color: #ffffff;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.8),
+    0 0 12px rgba(255, 255, 255, 0.6);
+}
+
+/* 입력창은 그대로 어두운 배경 유지 → 무지개 위에서도 글자 읽힘 */
+body.crazy-mode #word-input {
+  background: rgba(10, 20, 40, 0.65);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #ffffff;
+}
+
+body.crazy-mode #word-input::placeholder {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── 애니메이션 ───────────────────────── */
+@keyframes comboPop {
+  from { transform: translate(-50%, -50%) scale(0.6); }
+  to   { transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes hpPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes screenShake {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-6px, 3px); }
+  40%  { transform: translate(6px, -3px); }
+  60%  { transform: translate(-4px, 2px); }
+  80%  { transform: translate(4px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+body.screen-shake {
+  animation: screenShake 0.4s ease;
+}

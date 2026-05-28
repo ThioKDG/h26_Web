@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>☔ 산성비 타자연습</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- 게임 캔버스 -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD: 점수 / HP / 레벨 -->
+  <div id="hud">
+    <div class="hud-item">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="score-value">0</span>
+    </div>
+
+    <div class="hud-item hp-bar-container">
+      <span class="hud-label">HP</span>
+      <div id="hp-bar-wrap">
+        <div id="hp-bar-inner"></div>
+      </div>
+      <span id="hp-text">5 / 5</span>
+    </div>
+
+    <div class="hud-item">
+      <span class="hud-label">Level</span>
+      <span class="hud-value" id="level-value">1</span>
+    </div>
+  </div>
+
+  <!-- 크레이지 모드 토글 (우측 상단 고정) -->
+  <button id="crazy-toggle" type="button" aria-pressed="false">
+    <span class="crazy-icon">🌈</span>
+    <span class="crazy-label">크레이지 모드: OFF</span>
+  </button>
+
+  <!-- 콤보 & 메시지 표시 (캔버스 위 DOM) -->
+  <div id="combo-display"></div>
+  <div id="message-display"></div>
+
+  <!-- 하단 입력창 -->
+  <div id="input-area">
+    <input
+      id="word-input"
+      type="text"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      placeholder="타이핑을 시작하면 게임이 시작됩니다"
+    />
+  </div>
+
+  <!-- 게임오버 재시작 버튼 -->
+  <button id="restart-btn">▶ 다시 시작</button>
+
+  <!-- ES 모듈로 main.js 로드 -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
