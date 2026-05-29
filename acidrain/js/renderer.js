@@ -221,7 +221,7 @@ export class Renderer {
       ctx.font = `16px ${this.fonts}`;
       ctx.fillStyle = '#aaccee';
       ctx.fillText(
-        `⌨ ${stats.wpm} WPM   ✓ 정확도 ${stats.accuracy}%   ⏱ 평균 ${stats.avgReactionMs}ms   📝 ${stats.matchedWords}맞춤 / ${stats.missedWords}놓침`,
+        `⌨ ${stats.tasu.toLocaleString()}타   ✓ 정확도 ${stats.accuracy}%   ⏱ 평균 ${stats.avgReactionMs}ms   📝 ${stats.matchedWords}맞춤 / ${stats.missedWords}놓침`,
         w / 2,
         top + 130
       );

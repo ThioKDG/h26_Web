@@ -153,10 +153,28 @@ export class Game {
       startTime: withStart ? performance.now() : 0,
       endTime: 0,
       matchedWords: 0,
-      matchedChars: 0,
+      matchedStrokes: 0,  // 한글 자모 단위 누적 타수
       missedWords: 0,
       reactionTimes: [],  // 각 단어를 잡기까지 걸린 시간 (ms)
     };
+  }
+
+  // 한글 한 음절을 자모 단위 타수로 환산
+  // - 받침 없음: 자음 + 모음 = 2타
+  // - 받침 있음: 자음 + 모음 + 받침 = 3타
+  // - 그 외(영문/숫자/기호): 1타
+  _countStrokes(text) {
+    let count = 0;
+    for (const ch of text) {
+      const code = ch.charCodeAt(0);
+      if (code >= 0xAC00 && code <= 0xD7A3) {
+        const jongseongIndex = (code - 0xAC00) % 28;
+        count += jongseongIndex === 0 ? 2 : 3;
+      } else {
+        count += 1;
+      }
+    }
+    return count;
   }
 
   // 게임 종료/결과 계산을 위한 통계 헬퍼
@@ -164,15 +182,15 @@ export class Game {
     const s = this.state.stats;
     const elapsedMs = (s.endTime || performance.now()) - (s.startTime || performance.now());
     const minutes = elapsedMs / 60000;
-    // WPM: 표준 공식 (chars / 5) / minutes
-    const wpm = minutes > 0 ? Math.round((s.matchedChars / 5) / minutes) : 0;
+    // 분당 타수 (한컴타자 등 표준 한글 타수 측정 방식)
+    const tasu = minutes > 0 ? Math.round(s.matchedStrokes / minutes) : 0;
     const totalAttempts = s.matchedWords + s.missedWords;
     const accuracy = totalAttempts > 0 ? Math.round((s.matchedWords / totalAttempts) * 100) : 0;
     const avgReaction = s.reactionTimes.length > 0
       ? Math.round(s.reactionTimes.reduce((a, b) => a + b, 0) / s.reactionTimes.length)
       : 0;
     return {
-      wpm,
+      tasu,
       accuracy,
       avgReactionMs: avgReaction,
       matchedWords: s.matchedWords,
@@ -264,7 +282,7 @@ export class Game {
 
     // 통계 기록
     state.stats.matchedWords++;
-    state.stats.matchedChars += word.text.length;
+    state.stats.matchedStrokes += this._countStrokes(word.text);
     if (word.spawnTime) {
       state.stats.reactionTimes.push(performance.now() - word.spawnTime);
     }
@@ -327,7 +345,7 @@ export class Game {
     // 매칭 자체에 작은 보너스 점수
     state.score += 50;
     state.stats.matchedWords++;
-    state.stats.matchedChars += word.text.length;
+    state.stats.matchedStrokes += this._countStrokes(word.text);
     if (word.spawnTime) {
       state.stats.reactionTimes.push(performance.now() - word.spawnTime);
     }
