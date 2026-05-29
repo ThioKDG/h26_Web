@@ -102,6 +102,83 @@
     </div>
   </div>
 
+  <!-- 첫 방문 튜토리얼 모달 (한 번만 표시) -->
+  <div id="tutorial-modal" class="hidden" role="dialog" aria-modal="true">
+    <div class="tutorial-backdrop"></div>
+    <div class="tutorial-panel">
+      <button id="tutorial-skip" type="button" aria-label="건너뛰기">건너뛰기 ✕</button>
+
+      <div class="tutorial-slides">
+        <!-- 1. 환영 -->
+        <div class="tutorial-slide" data-step="1">
+          <div class="tutorial-icon">☔</div>
+          <h2>산성비 타자연습에 오신 것을 환영합니다!</h2>
+          <p>위에서 떨어지는 단어를 바닥에 닿기 전에 입력해서 제거하는 게임입니다.</p>
+          <p>입력창은 자동으로 포커스되므로 <strong>그냥 타이핑을 시작</strong>하면 게임이 시작됩니다.</p>
+        </div>
+
+        <!-- 2. 점수/콤보/HP -->
+        <div class="tutorial-slide" data-step="2" hidden>
+          <div class="tutorial-icon">💯</div>
+          <h2>점수 · 콤보 · 체력</h2>
+          <ul>
+            <li><strong>점수</strong>: 글자 수 × 콤보 배수 × 10</li>
+            <li><strong>콤보</strong>: 연속 정답 시 <strong>최대 5배</strong>까지 보너스</li>
+            <li><strong>HP</strong>: 단어를 놓치면 -1, 0이 되면 게임오버 (최대 5)</li>
+            <li>800점마다 레벨 업 → 난이도 상승</li>
+          </ul>
+        </div>
+
+        <!-- 3. 크레이지 모드 -->
+        <div class="tutorial-slide" data-step="3" hidden>
+          <div class="tutorial-icon">🌈</div>
+          <h2>크레이지 모드</h2>
+          <ul>
+            <li>우측 상단 버튼으로 ON/OFF</li>
+            <li>4글자 이상 단어만 등장, 속도가 <strong>수시로 변동</strong></li>
+            <li>게임 중 끄려 하면 <strong>속도 패널티</strong>가 누적됩니다 ⚡</li>
+            <li>일반/크레이지 랭킹은 분리 저장됩니다</li>
+          </ul>
+        </div>
+
+        <!-- 4. 파워업 단어 -->
+        <div class="tutorial-slide" data-step="4" hidden>
+          <div class="tutorial-icon">💎</div>
+          <h2>파워업 단어 (5% 확률)</h2>
+          <p>가끔 특수 효과를 가진 빛나는 단어가 등장합니다:</p>
+          <ul>
+            <li><strong>❄ 시간정지</strong> — 3초간 모든 단어가 멈춤</li>
+            <li><strong>💣 폭탄제거</strong> — 화면의 모든 단어 제거 + 보너스</li>
+            <li><strong>💖 체력회복</strong> — HP +1 (만땅이면 +200 점수)</li>
+          </ul>
+        </div>
+
+        <!-- 5. 단어 관리 -->
+        <div class="tutorial-slide" data-step="5" hidden>
+          <div class="tutorial-icon">📝</div>
+          <h2>내 단어 추가하기</h2>
+          <p>우측 상단 <strong>📝 내 단어 관리</strong> 버튼으로 본인이 원하는 단어를 난이도별로 자유롭게 추가/삭제할 수 있습니다.</p>
+          <p>친구 이름, 좋아하는 코딩 용어 등 무엇이든 OK! 추가한 단어는 기본 단어 풀에 즉시 합쳐져서 게임에 등장합니다.</p>
+        </div>
+      </div>
+
+      <div class="tutorial-footer">
+        <div class="tutorial-dots">
+          <span class="dot active" data-step="1"></span>
+          <span class="dot" data-step="2"></span>
+          <span class="dot" data-step="3"></span>
+          <span class="dot" data-step="4"></span>
+          <span class="dot" data-step="5"></span>
+        </div>
+        <div class="tutorial-nav">
+          <button id="tutorial-prev" type="button" disabled>← 이전</button>
+          <button id="tutorial-next" type="button">다음 →</button>
+          <button id="tutorial-start" type="button" hidden>🎮 시작하기!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ES 모듈로 main.js 로드 -->
   <script type="module" src="js/main.js"></script>
 

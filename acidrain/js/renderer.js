@@ -16,6 +16,13 @@ export class Renderer {
     this.canvas.height = window.innerHeight;
   }
 
+  // 데드라인 Y 좌표 = 입력바 상단 (단어가 이 선에 닿으면 HP 감소)
+  getDeadlineY() {
+    const inputArea = document.getElementById('input-area');
+    const inputH = inputArea ? inputArea.offsetHeight : 80;
+    return this.canvas.height - inputH;
+  }
+
   clear() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
@@ -37,17 +44,37 @@ export class Renderer {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // 바닥 위험 라인
+    // ── 데드라인 시각화 ──
+    const deadlineY = this.getDeadlineY();
+
+    // 1) 데드라인 위 60px의 위험 구간 그라디언트 (투명 → 빨강)
+    const dangerGrad = ctx.createLinearGradient(0, deadlineY - 60, 0, deadlineY);
+    dangerGrad.addColorStop(0, 'rgba(255, 60, 60, 0)');
+    dangerGrad.addColorStop(1, 'rgba(255, 60, 60, 0.2)');
+    ctx.fillStyle = dangerGrad;
+    ctx.fillRect(0, deadlineY - 60, w, 60);
+
+    // 2) 데드라인 라인 (펄스 글로우 — HP 낮을수록 진해짐)
+    const pulse = 0.6 + Math.sin(performance.now() / 400) * 0.2;
+    const lineAlpha = 0.55 + dangerLevel * 0.45;
     ctx.save();
-    ctx.strokeStyle = dangerLevel > 0.6
-      ? `rgba(255, 60, 60, 0.6)`
-      : `rgba(100, 160, 255, 0.3)`;
+    ctx.strokeStyle = `rgba(255, 70, 70, ${lineAlpha})`;
     ctx.lineWidth = 2;
-    ctx.setLineDash([8, 6]);
+    ctx.shadowColor = '#ff3322';
+    ctx.shadowBlur = 14 * pulse;
     ctx.beginPath();
-    ctx.moveTo(0, h - 4);
-    ctx.lineTo(w, h - 4);
+    ctx.moveTo(0, deadlineY);
+    ctx.lineTo(w, deadlineY);
     ctx.stroke();
+    ctx.restore();
+
+    // 3) 우측 끝에 "DEADLINE" 라벨
+    ctx.save();
+    ctx.font = `bold 11px 'Orbitron', monospace`;
+    ctx.fillStyle = `rgba(255, 100, 100, ${lineAlpha})`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('⚠ DEADLINE', w - 12, deadlineY - 4);
     ctx.restore();
   }
 
@@ -72,8 +99,9 @@ export class Renderer {
   }
 
   drawWords(words) {
+    const deadlineY = this.getDeadlineY();
     for (const word of words) {
-      word.draw(this.ctx, this.fonts);
+      word.draw(this.ctx, this.fonts, deadlineY);
     }
   }
 

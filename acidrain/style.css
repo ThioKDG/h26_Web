@@ -281,6 +281,177 @@ html, body {
   display: none;               /* JS가 idle/gameover에서만 보이게 함 */
 }
 
+/* ── 첫 방문 튜토리얼 모달 ────────────── */
+#tutorial-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#tutorial-modal.hidden { display: none; }
+
+#tutorial-modal .tutorial-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+}
+
+#tutorial-modal .tutorial-panel {
+  position: relative;
+  background: linear-gradient(180deg, #131e36, #0a0e1a);
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  box-shadow: 0 0 60px var(--accent-glow);
+  width: min(560px, 92vw);
+  padding: 44px 36px 28px;
+  text-align: center;
+  color: var(--text);
+}
+
+#tutorial-skip {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+#tutorial-skip:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.tutorial-slide {
+  min-height: 240px;
+}
+
+.tutorial-icon {
+  font-size: 56px;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.tutorial-slide h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 20px;
+  color: var(--accent);
+  margin-bottom: 16px;
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+
+.tutorial-slide p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 8px 0;
+  color: var(--text);
+}
+
+.tutorial-slide ul {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  display: inline-block;
+  margin: 8px auto;
+}
+
+.tutorial-slide ul li {
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.tutorial-slide strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Footer: 도트 + 네비 버튼 */
+.tutorial-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hud-border);
+}
+
+.tutorial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tutorial-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.tutorial-dots .dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.tutorial-dots .dot.active {
+  background: var(--accent);
+  transform: scale(1.4);
+}
+
+.tutorial-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tutorial-nav button {
+  flex: 1;
+  padding: 10px 18px;
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--hud-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.tutorial-nav button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent);
+  transform: scale(1.03);
+}
+
+.tutorial-nav button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+#tutorial-start {
+  background: linear-gradient(135deg, var(--accent), #66aaff);
+  color: var(--bg);
+  border: none;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+#tutorial-start:hover {
+  box-shadow: 0 0 40px var(--accent-glow);
+}
+
 /* ── 단어 관리 모달 ──────────────────── */
 #word-editor-modal {
   position: fixed;

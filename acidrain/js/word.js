@@ -15,12 +15,11 @@ const POWER_UP_ICONS = {
 };
 
 export class WordDrop {
-  constructor({ text, x, speed, canvasHeight, powerUp = null }) {
+  constructor({ text, x, speed, powerUp = null }) {
     this.text = text;
     this.x = x;
     this.y = -10;
     this.speed = speed;
-    this.canvasHeight = canvasHeight;
     this.isHighlighted = false;
     this.matchedLength = 0;
     this.opacity = 1;
@@ -30,17 +29,18 @@ export class WordDrop {
     this.spawnTime = performance.now(); // 반응 시간 측정용
   }
 
-  update() {
+  update(speedMul = 1) {
     if (this.isDying) {
       // 사라질 때 페이드아웃 + 스케일업 효과
       this.opacity -= 0.08;
       this.scale += 0.05;
       return;
     }
-    this.y += this.speed;
+    // speedMul: 크레이지 모드의 실시간 진동 배수 (1이면 효과 없음)
+    this.y += this.speed * speedMul;
   }
 
-  draw(ctx, fonts) {
+  draw(ctx, fonts, deadlineY) {
     ctx.save();
     ctx.globalAlpha = this.opacity;
     ctx.translate(this.x, this.y);
@@ -101,7 +101,8 @@ export class WordDrop {
       ctx.shadowBlur = 16;
       ctx.fillText(remainText, startX + matchedWidth, 0);
     } else {
-      const dangerRatio = this.y / this.canvasHeight;
+      // 데드라인 기준 위험도 (0~1) — 데드라인에 가까울수록 위험
+      const dangerRatio = deadlineY > 0 ? this.y / deadlineY : 0;
       if (dangerRatio > 0.75) {
         ctx.fillStyle = `rgb(255, ${Math.floor(100 * (1 - dangerRatio))}, 50)`;
         ctx.shadowColor = '#ff3322';
@@ -118,8 +119,9 @@ export class WordDrop {
     ctx.restore();
   }
 
-  isOutOfBound() {
-    return this.y > this.canvasHeight + 30;
+  // 데드라인(입력바 상단)을 넘으면 아웃 → HP 감소
+  isOutOfBound(deadlineY) {
+    return this.y > deadlineY;
   }
 
   isFullyFaded() {

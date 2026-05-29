@@ -80,12 +80,7 @@ export class Spawner {
     }
 
     const text = this._getRandomWord(level);
-    return new WordDrop({
-      text,
-      x,
-      speed,
-      canvasHeight: this.canvas.height,
-    });
+    return new WordDrop({ text, x, speed });
   }
 
   _spawnPowerUp(x, speed) {
@@ -100,7 +95,6 @@ export class Spawner {
       text: textByType[powerUp],
       x,
       speed: speed * 0.85,   // 파워업은 약간 느리게 → 잡을 기회
-      canvasHeight: this.canvas.height,
       powerUp,
     });
   }
@@ -144,9 +138,19 @@ export class Spawner {
     const base = this.baseSpeed + (level - 1) * 0.3;
     const random = (Math.random() - 0.5) * 0.4;
     const speed = Math.max(0.5, base + random);
-    // 크레이지 모드: 낙하 속도 50% 가속
-    const withCrazy = this.crazyMode ? speed * 1.5 : speed;
-    // 패널티 부스트: 배수만큼 낙하 가속
-    return withCrazy * this._boostMul;
+    // 크레이지 모드 가속은 매 프레임 word.update에서 동적으로 곱해짐
+    // (getCrazySpeedMultiplier 참고)
+    return speed * this._boostMul;
+  }
+
+  // 크레이지 모드 실시간 속도 배수 (시간에 따라 진동 → 정신없는 효과)
+  // 평균 1.5배, 0.6 ~ 2.4배 사이를 두 개의 사인파가 합쳐서 불규칙하게 오감
+  getCrazySpeedMultiplier() {
+    if (!this.crazyMode) return 1;
+    const t = performance.now() / 1000;
+    const primary   = Math.sin(t * 1.3);  // 주 진동 (~4.8초 주기)
+    const secondary = Math.sin(t * 3.7);  // 보조 진동 (~1.7초 주기)
+    const combined  = primary * 0.7 + secondary * 0.3;  // -1 ~ 1 범위
+    return 1.5 + combined * 0.9;           // 0.6 ~ 2.4 범위
   }
 }

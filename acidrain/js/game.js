@@ -92,10 +92,16 @@ export class Game {
     this.crazyMode = !this.crazyMode;
     localStorage.setItem('acidrain_crazy', this.crazyMode ? '1' : '0');
     this._applyCrazyMode();
-    this.ui.showMessage(
-      this.crazyMode ? '🌈 크레이지 모드 ON!' : '크레이지 모드 OFF',
-      this.crazyMode ? 'levelup' : 'info'
-    );
+
+    if (this.crazyMode) {
+      // 켤 때: 진동 가속 메커니즘에 대한 경고
+      this.ui.showMessage(
+        '🌈 크레이지 ON! ⚠ 속도가 수시로 빨라졌다 느려졌다 합니다',
+        'danger'
+      );
+    } else {
+      this.ui.showMessage('크레이지 모드 OFF', 'info');
+    }
   }
 
   _applyCrazyMode() {
@@ -448,18 +454,23 @@ export class Game {
       if (newWord) state.words.push(newWord);
     }
 
+    // 크레이지 모드 진동 배수 (이번 프레임 기준) — 모든 단어에 동일하게 적용
+    const speedMul = this.spawner.getCrazySpeedMultiplier();
+    // 데드라인 = 입력바 상단 — 이 선에 닿으면 HP 감소
+    const deadlineY = this.renderer.getDeadlineY();
+
     // 단어 위치 업데이트 (시간정지 중이면 죽어가는 단어만 업데이트)
     const toRemove = [];
     for (const word of state.words) {
       if (!isFrozen || word.isDying) {
-        word.update();
+        word.update(speedMul);
       }
 
       if (word.isDying && word.isFullyFaded()) {
         toRemove.push(word);
         continue;
       }
-      if (!word.isDying && word.isOutOfBound()) {
+      if (!word.isDying && word.isOutOfBound(deadlineY)) {
         toRemove.push(word);
         this._onWordMissed(word);
       }
