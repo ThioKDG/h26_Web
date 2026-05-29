@@ -3,6 +3,63 @@
 
 import { WordDrop } from './word.js';
 
+// 영문 모드 전용 단어 풀 — 일상 영어 단어
+const ENGLISH_WORDS = {
+  easy: [
+    // 짧은 일상 단어 (3-5글자)
+    'cat', 'dog', 'sun', 'sky', 'run', 'book', 'time', 'work', 'life', 'home',
+    'hand', 'eye', 'art', 'tree', 'rain', 'snow', 'wind', 'cake', 'fish', 'ice',
+    'sea', 'bird', 'day', 'food', 'milk', 'room', 'star', 'moon', 'fire', 'leaf',
+    'song', 'desk', 'door', 'love', 'rose', 'baby', 'wave', 'gold', 'cool', 'lion',
+  ],
+  medium: [
+    // 중간 길이 단어 (5-7글자)
+    'apple', 'bread', 'pizza', 'sushi', 'water', 'juice', 'music', 'ocean', 'cloud', 'world',
+    'phone', 'mouse', 'write', 'dance', 'river', 'eagle', 'snake', 'sugar', 'butter', 'coffee',
+    'school', 'friend', 'family', 'animal', 'garden', 'flower', 'basket', 'market', 'planet', 'monkey',
+    'orange', 'banana', 'tomato', 'forest', 'island', 'castle', 'bridge', 'circle', 'square',
+  ],
+  hard: [
+    // 긴 단어 (8글자 이상)
+    'elephant', 'computer', 'software', 'keyboard', 'mountain', 'midnight', 'sunshine', 'butterfly',
+    'breakfast', 'telescope', 'knowledge', 'internet', 'holiday', 'beautiful', 'important', 'language',
+    'paradise', 'monument', 'happiness', 'adventure', 'chocolate', 'firework', 'umbrella', 'magazine',
+    'electric', 'medicine', 'orchestra', 'tradition', 'wonderful', 'dictionary',
+  ],
+};
+
+// 프로그래머 모드 전용 단어 풀 — C, Python 키워드/빌트인 함수
+const PROGRAMMER_WORDS = {
+  easy: [
+    // Python 짧은 키워드/타입
+    'def', 'int', 'str', 'len', 'set', 'for', 'try', 'not', 'and', 'or',
+    'as', 'in', 'is', 'if', 'pop', 'pass', 'True', 'None', 'type', 'list',
+    'dict', 'bool', 'else',
+    // C 짧은 키워드/타입
+    'do', 'enum', 'case', 'goto', 'long', 'void', 'char', 'auto', 'free',
+    'main', 'NULL', 'exit',
+  ],
+  medium: [
+    // Python 빌트인 함수/키워드
+    'print', 'input', 'range', 'while', 'class', 'False', 'break', 'yield',
+    'lambda', 'return', 'import', 'append', 'format', 'tuple', 'string',
+    'open', 'read', 'write', 'split', 'join',
+    // C 키워드/함수
+    'printf', 'scanf', 'sizeof', 'struct', 'switch', 'malloc', 'static',
+    'signed', 'union', 'const', 'double', 'extern', 'inline', 'float',
+    'short', 'fopen', 'fclose',
+  ],
+  hard: [
+    // Python 빌트인 / 메서드
+    'continue', 'enumerate', 'iterator', 'generator', 'function',
+    'isinstance', 'hasattr', 'getattr', 'property', 'staticmethod',
+    'decorator', 'exception',
+    // C 키워드 / 표준 함수
+    'register', 'volatile', 'unsigned', 'typedef', 'include', 'define',
+    'fprintf', 'fscanf', 'strncpy', 'strncmp', 'sprintf', 'strlen',
+  ],
+};
+
 export class Spawner {
   constructor(wordData, canvas) {
     this.wordData = wordData;   // words.json 데이터
@@ -12,16 +69,30 @@ export class Spawner {
     this.baseSpeed = 0.8;       // 기본 낙하 속도
     this.active = false;
     this.crazyMode = false;
+    this.programmerMode = false;
+    this.language = 'ko';   // 'ko' | 'en'
 
-    // 크레이지 모드 전용 단어 풀: medium + hard 중 4글자 이상만
+    // 크레이지 모드용 4글자 이상 풀 — 언어별로 따로 캐싱
     this._crazyPool = [
       ...wordData.medium,
       ...wordData.hard,
+    ].filter((w) => w && w.length >= 4);
+    this._crazyEnPool = [
+      ...ENGLISH_WORDS.medium,
+      ...ENGLISH_WORDS.hard,
     ].filter((w) => w && w.length >= 4);
   }
 
   setCrazyMode(crazy) {
     this.crazyMode = !!crazy;
+  }
+
+  setProgrammerMode(prog) {
+    this.programmerMode = !!prog;
+  }
+
+  setLanguage(lang) {
+    this.language = lang === 'en' ? 'en' : 'ko';
   }
 
   // 단어 데이터 교체 (커스텀 단어 추가/삭제 후 호출)
@@ -89,26 +160,37 @@ export class Spawner {
   }
 
   _getRandomWord(level) {
-    // 크레이지 모드: 4글자 이상 medium/hard 풀에서만 추출
-    if (this.crazyMode) {
-      const pool = this._crazyPool;
-      if (pool.length === 0) return this.wordData.hard[0] || '크레이지';
+    // 프로그래머 모드: C/Python 풀에서만 추출 (언어 무관)
+    if (this.programmerMode) {
+      const data = PROGRAMMER_WORDS;
+      let pool;
+      if (level <= 2) {
+        pool = data.easy;
+      } else if (level <= 4) {
+        pool = Math.random() < 0.3 ? data.easy : data.medium;
+      } else {
+        pool = Math.random() < 0.4 ? data.medium : data.hard;
+      }
       return pool[Math.floor(Math.random() * pool.length)];
     }
 
+    // 크레이지 모드: 4글자 이상, 현재 언어 풀에서
+    if (this.crazyMode) {
+      const pool = this.language === 'en' ? this._crazyEnPool : this._crazyPool;
+      if (pool.length === 0) return 'crazy';
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    // 일반 모드: 언어에 맞는 단어 풀 사용
+    const data = this.language === 'en' ? ENGLISH_WORDS : this.wordData;
+
     let pool;
     if (level <= 2) {
-      pool = this.wordData.easy;
+      pool = data.easy;
     } else if (level <= 4) {
-      // 중간 레벨: easy 30% + medium 70%
-      pool = Math.random() < 0.3
-        ? this.wordData.easy
-        : this.wordData.medium;
+      pool = Math.random() < 0.3 ? data.easy : data.medium;
     } else {
-      // 고레벨: medium 40% + hard 60%
-      pool = Math.random() < 0.4
-        ? this.wordData.medium
-        : this.wordData.hard;
+      pool = Math.random() < 0.4 ? data.medium : data.hard;
     }
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -124,7 +206,10 @@ export class Spawner {
     // 레벨 오를수록 속도 증가 + 약간의 랜덤성
     const base = this.baseSpeed + (level - 1) * 0.3;
     const random = (Math.random() - 0.5) * 0.4;
-    return Math.max(0.5, base + random);
+    let speed = Math.max(0.5, base + random);
+    // 프로그래머 모드: 영문 단어가 길어서 입력 시간이 더 필요 → 25% 감속 보정
+    if (this.programmerMode) speed *= 0.75;
+    return speed;
     // 크레이지 모드 가속은 매 프레임 word.update에서 동적으로 곱해짐
     // (getCrazySpeedMultiplier 참고)
   }

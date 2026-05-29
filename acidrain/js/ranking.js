@@ -3,8 +3,11 @@
 // 모드별로 별도 저장소 사용: normal / crazy
 
 const STORAGE_KEYS = {
-  normal: 'acidrain_ranking_v1',
-  crazy:  'acidrain_ranking_crazy_v1',
+  normal:     'acidrain_ranking_v1',
+  crazy:      'acidrain_ranking_crazy_v1',
+  normal_en:  'acidrain_ranking_english_v1',
+  crazy_en:   'acidrain_ranking_crazy_en_v1',
+  programmer: 'acidrain_ranking_programmer_v1',
 };
 const MAX_ENTRIES = 10;
 const MAX_NAME_LEN = 8;

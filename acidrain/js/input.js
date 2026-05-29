@@ -36,6 +36,14 @@ export class InputHandler {
   checkWords(words) {
     const val = this.currentValue;
 
+    // 빈 입력 시 모든 단어의 하이라이트를 깔끔하게 클리어
+    if (!val) {
+      for (const word of words) {
+        if (word.isHighlighted) word.updateHighlight('');
+      }
+      return;
+    }
+
     for (const word of words) {
       if (word.isDying) continue;
 
@@ -61,6 +69,14 @@ export class InputHandler {
       this.currentValue = e.target.value;
       // 입력 이벤트에서 onType 호출 (checkWords 내부가 아님!)
       this.onType?.(this.currentValue);
+    });
+
+    // 게임 중 Enter → 입력 초기화 (틀린 단어 빠르게 지우는 편의 기능)
+    this.inputEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      if (!this.enabled) return;   // naming 등 다른 상태에서는 game.js가 처리
+      e.preventDefault();
+      this.reset();
     });
 
     // 모바일 대응: compositionend (한국어 IME)

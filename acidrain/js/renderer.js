@@ -274,25 +274,33 @@ export class Renderer {
   _drawRankingList(ranking, startY, highlightIndex, mode = 'normal') {
     const ctx = this.ctx;
     const w = this.canvas.width;
-    const isCrazy = mode === 'crazy';
 
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // 헤더 (모드에 따라 라벨/색상 변경)
+    // 헤더 (모드 + 언어에 따라 라벨/색상 변경)
     ctx.font = `bold 22px ${this.fonts}`;
-    if (isCrazy) {
+    let headerText;
+    if (mode === 'crazy' || mode === 'crazy_en') {
       ctx.fillStyle = '#ff66cc';
       ctx.shadowColor = '#ff33aa';
+      const langTag = mode === 'crazy_en' ? 'EN' : 'KR';
+      headerText = `🌈 TOP 10 RANKING — CRAZY [${langTag}]`;
+    } else if (mode === 'programmer') {
+      ctx.fillStyle = '#66ff88';
+      ctx.shadowColor = '#00ff44';
+      headerText = '</> TOP 10 RANKING — PROGRAMMER MODE';
+    } else if (mode === 'normal_en') {
+      ctx.fillStyle = '#88ddff';
+      ctx.shadowColor = '#3399ff';
+      headerText = '🌐 TOP 10 RANKING — ENGLISH MODE';
     } else {
       ctx.fillStyle = '#ffaa44';
       ctx.shadowColor = '#ff8800';
+      headerText = '🏆 TOP 10 RANKING — NORMAL MODE';
     }
     ctx.shadowBlur = 12;
-    const headerText = isCrazy
-      ? '🌈 TOP 10 RANKING — CRAZY MODE'
-      : '🏆 TOP 10 RANKING — NORMAL MODE';
     ctx.fillText(headerText, w / 2, startY);
     ctx.shadowBlur = 0;
 

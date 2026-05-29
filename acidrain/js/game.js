@@ -22,12 +22,23 @@ export class Game {
     this.inputEl = document.getElementById('word-input');
     this.restartBtn = document.getElementById('restart-btn');
     this.crazyToggleBtn = document.getElementById('crazy-toggle');
+    this.programmerToggleBtn = document.getElementById('programmer-toggle');
+    this.languageToggleBtn = document.getElementById('language-toggle');
 
-    // 크레이지 모드 (localStorage에서 상태 복원)
+    // 크레이지/프로그래머 모드 (둘 다 동시 활성화 불가)
     this.crazyMode = localStorage.getItem('acidrain_crazy') === '1';
+    this.programmerMode = localStorage.getItem('acidrain_programmer') === '1';
+    if (this.crazyMode && this.programmerMode) this.programmerMode = false;
 
-    // 현재 모드 문자열 헬퍼
-    this._modeKey = () => (this.crazyMode ? 'crazy' : 'normal');
+    // 언어 설정 (한글/영문) — 프로그래머 모드에는 영향 없음
+    this.language = localStorage.getItem('acidrain_language') === 'en' ? 'en' : 'ko';
+
+    // 현재 모드 + 언어 조합 키 (랭킹 저장소 분리용)
+    this._modeKey = () => {
+      if (this.programmerMode) return 'programmer';
+      if (this.crazyMode) return this.language === 'en' ? 'crazy_en' : 'crazy';
+      return this.language === 'en' ? 'normal_en' : 'normal';
+    };
 
     // 게임 상태
     this.state = {
@@ -72,8 +83,10 @@ export class Game {
     this.renderer.resize();
     this._startLoop();
 
-    // 크레이지 모드 초기 상태 반영
+    // 모드 초기 상태 반영
     this._applyCrazyMode();
+    this._applyProgrammerMode();
+    this._applyLanguage();
 
     // 시작 화면 표시
     this.state.status = 'idle';
@@ -89,13 +102,13 @@ export class Game {
   }
 
   // ─── 크레이지 모드 ─────────────────────────────────────
+  // 토글 메서드들은 호환성 검사가 끝난 후에만 호출됨 (click 핸들러가 가드함)
   toggleCrazyMode() {
     this.crazyMode = !this.crazyMode;
     localStorage.setItem('acidrain_crazy', this.crazyMode ? '1' : '0');
     this._applyCrazyMode();
 
     if (this.crazyMode) {
-      // 켤 때: 진동 가속 메커니즘에 대한 경고
       this.ui.showMessage(
         '🌈 크레이지 ON! ⚠ 속도가 수시로 빨라졌다 느려졌다 합니다',
         'danger'
@@ -103,6 +116,60 @@ export class Game {
     } else {
       this.ui.showMessage('크레이지 모드 OFF', 'info');
     }
+  }
+
+  toggleProgrammerMode() {
+    this.programmerMode = !this.programmerMode;
+    localStorage.setItem('acidrain_programmer', this.programmerMode ? '1' : '0');
+    this._applyProgrammerMode();
+
+    if (this.programmerMode) {
+      this.ui.showMessage(
+        '</> 프로그래머 모드 ON — C/Python 키워드 + 속도 25% 보정',
+        'levelup'
+      );
+    } else {
+      this.ui.showMessage('프로그래머 모드 OFF', 'info');
+    }
+  }
+
+  _applyProgrammerMode() {
+    document.body.classList.toggle('programmer-mode', this.programmerMode);
+
+    if (this.programmerToggleBtn) {
+      this.programmerToggleBtn.setAttribute('aria-pressed', this.programmerMode ? 'true' : 'false');
+      const label = this.programmerToggleBtn.querySelector('.programmer-label');
+      if (label) label.textContent = `프로그래머 모드: ${this.programmerMode ? 'ON' : 'OFF'}`;
+    }
+
+    this.spawner.setProgrammerMode(this.programmerMode);
+    this.ranking = loadRanking(this._modeKey());
+    this.state.newRankIndex = -1;
+  }
+
+  toggleLanguage() {
+    this.language = this.language === 'en' ? 'ko' : 'en';
+    localStorage.setItem('acidrain_language', this.language);
+    this._applyLanguage();
+    this.ui.showMessage(
+      this.language === 'en' ? '🌐 English Mode' : '🌐 한글 모드',
+      'info'
+    );
+  }
+
+  _applyLanguage() {
+    document.body.classList.toggle('lang-en', this.language === 'en');
+
+    if (this.languageToggleBtn) {
+      this.languageToggleBtn.setAttribute('aria-pressed', this.language === 'en' ? 'true' : 'false');
+      const label = this.languageToggleBtn.querySelector('.language-label');
+      if (label) label.textContent = `언어: ${this.language === 'en' ? '영문' : '한글'}`;
+    }
+
+    this.spawner.setLanguage(this.language);
+    // 언어가 바뀌면 랭킹 저장소도 바뀜
+    this.ranking = loadRanking(this._modeKey());
+    this.state.newRankIndex = -1;
   }
 
   _applyCrazyMode() {
@@ -241,20 +308,61 @@ export class Game {
       this.restartBtn.addEventListener('click', () => this.restart());
     }
 
-    // 크레이지 모드 토글 (게임 중에는 차단 + 블라인드 패널티)
+    // 크레이지 모드 토글
+    // - 게임 중 + 크레이지가 ON이면 끄려는 시도로 보고 블라인드 패널티
+    // - 게임 중 + 크레이지가 OFF면 단순 차단
+    // - 정지 상태 + 프로그래머 ON이면 호환 안 됨 → 차단
     if (this.crazyToggleBtn) {
       this.crazyToggleBtn.addEventListener('click', () => {
         if (this.state.status === 'playing' || this.state.status === 'paused') {
-          const result = this._triggerBlindPenalty();
-          const msg = result.capped
-            ? '더 이상 가려질 수 없습니다! 👁'
-            : `게임은 쉬우면 재미없습니다. +${result.addedSec}초 시야 차단! 👁`;
-          this.ui.showMessage(msg, 'danger');
-          this.ui.showDamage();   // 화면 흔들림으로 즉각적인 피드백
+          if (this.crazyMode) {
+            const result = this._triggerBlindPenalty();
+            const msg = result.capped
+              ? '더 이상 가려질 수 없습니다! 👁'
+              : `게임은 쉬우면 재미없습니다. +${result.addedSec}초 시야 차단! 👁`;
+            this.ui.showMessage(msg, 'danger');
+            this.ui.showDamage();
+          } else {
+            this.ui.showMessage('게임 중에는 모드를 바꿀 수 없습니다.', 'danger');
+          }
+          this.inputEl.focus();
+          return;
+        }
+        if (this.programmerMode) {
+          this.ui.showMessage('프로그래머 모드에서는 크레이지를 켤 수 없습니다. 먼저 프로그래머를 끄세요.', 'danger');
           this.inputEl.focus();
           return;
         }
         this.toggleCrazyMode();
+      });
+    }
+
+    // 프로그래머 모드 토글 (게임 중 + 크레이지 ON 일 때 차단)
+    if (this.programmerToggleBtn) {
+      this.programmerToggleBtn.addEventListener('click', () => {
+        if (this.state.status === 'playing' || this.state.status === 'paused') {
+          this.ui.showMessage('게임 중에는 모드를 바꿀 수 없습니다.', 'danger');
+          this.inputEl.focus();
+          return;
+        }
+        if (this.crazyMode) {
+          this.ui.showMessage('크레이지 모드에서는 프로그래머를 켤 수 없습니다. 먼저 크레이지를 끄세요.', 'danger');
+          this.inputEl.focus();
+          return;
+        }
+        this.toggleProgrammerMode();
+      });
+    }
+
+    // 언어 토글 (한글 ↔ 영문, 게임 중에는 차단)
+    if (this.languageToggleBtn) {
+      this.languageToggleBtn.addEventListener('click', () => {
+        if (this.state.status === 'playing' || this.state.status === 'paused') {
+          this.ui.showMessage('게임 중에는 언어를 바꿀 수 없습니다.', 'danger');
+          this.inputEl.focus();
+          return;
+        }
+        this.toggleLanguage();
       });
     }
 
@@ -525,10 +633,8 @@ export class Game {
       return f.life > 0;
     });
 
-    // 입력 체크 (매 프레임)
-    if (this.input.currentValue) {
-      this.input.checkWords(state.words);
-    }
+    // 입력 체크 (매 프레임 — 빈 입력일 때도 하이라이트 즉시 클리어)
+    this.input.checkWords(state.words);
   }
 
   _draw() {
