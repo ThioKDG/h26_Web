@@ -12,7 +12,7 @@
 | 스타일 | CSS3 (Custom Properties, Flexbox, Grid, Keyframe Animation, Backdrop Filter) |
 | 렌더링 | HTML5 Canvas API (2D Context) |
 | 로직 | Vanilla JavaScript (ES6+ Modules, Class) |
-| 데이터 영속화 | `localStorage` (랭킹, 커스텀 단어, 모드 설정) |
+| 데이터 저장 | `localStorage` (랭킹, 커스텀 단어, 모드 설정) |
 | 폰트 | Google Fonts — Noto Sans KR, Orbitron |
 | 빌드 도구 | 없음 — 정적 파일을 브라우저가 직접 모듈로 로드 |
 
