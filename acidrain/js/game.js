@@ -40,6 +40,7 @@ export class Game {
       newRankIndex: -1,  // 방금 등록된 랭킹 인덱스 (하이라이트용)
       stats: this._freshStats(),
       freezeUntil: 0,    // 시간정지 파워업 종료 시각 (ms)
+      blindUntil: 0,     // 블라인드 패널티 종료 시각 (ms)
     };
 
     // 랭킹 데이터 (현재 모드 기준으로 로드)
@@ -137,6 +138,7 @@ export class Game {
       newRankIndex: -1,
       stats: this._freshStats(true),  // startTime을 지금으로
       freezeUntil: 0,
+      blindUntil: 0,
     };
 
     this.spawner.start();
@@ -221,15 +223,14 @@ export class Game {
       this.restartBtn.addEventListener('click', () => this.restart());
     }
 
-    // 크레이지 모드 토글 (게임 중에는 차단 + 속도 패널티)
+    // 크레이지 모드 토글 (게임 중에는 차단 + 블라인드 패널티)
     if (this.crazyToggleBtn) {
       this.crazyToggleBtn.addEventListener('click', () => {
         if (this.state.status === 'playing' || this.state.status === 'paused') {
-          const { mul, capped } = this.spawner.boostDifficulty();
-          const pct = Math.round((mul - 1) * 100);
-          const msg = capped
-            ? '더 이상 빨라질 수 없습니다! 🔥'
-            : `게임은 쉬우면 재미없습니다. 속도 +${pct}% ⚡`;
+          const result = this._triggerBlindPenalty();
+          const msg = result.capped
+            ? '더 이상 가려질 수 없습니다! 👁'
+            : `게임은 쉬우면 재미없습니다. +${result.addedSec}초 시야 차단! 👁`;
           this.ui.showMessage(msg, 'danger');
           this.ui.showDamage();   // 화면 흔들림으로 즉각적인 피드백
           this.inputEl.focus();
@@ -297,6 +298,25 @@ export class Game {
       level: state.level,
     });
     this.ui.showCombo(state.combo);
+  }
+
+  // 게임 중 크레이지 토글을 누른 사용자에게 시야 차단 패널티
+  // 클릭당 +2초씩 누적, 최대 8초까지
+  _triggerBlindPenalty() {
+    const ADD_MS = 2000;
+    const MAX_MS = 8000;
+    const now = performance.now();
+    const currentEnd = Math.max(this.state.blindUntil || 0, now);
+    const capEnd = now + MAX_MS;
+
+    if (currentEnd >= capEnd) {
+      return { capped: true, addedSec: 0 };
+    }
+
+    const newEnd = Math.min(currentEnd + ADD_MS, capEnd);
+    const added = (newEnd - currentEnd) / 1000;
+    this.state.blindUntil = newEnd;
+    return { capped: false, addedSec: added };
   }
 
   // 파워업 단어 매치 시 효과 발동
@@ -514,6 +534,12 @@ export class Game {
     if (state.status === 'playing') {
       const freezeRem = state.freezeUntil - performance.now();
       if (freezeRem > 0) renderer.drawFreezeOverlay(freezeRem);
+    }
+
+    // 블라인드 패널티 오버레이 (playing/paused 모두에서 표시)
+    if (state.status === 'playing' || state.status === 'paused') {
+      const blindRem = state.blindUntil - performance.now();
+      if (blindRem > 0) renderer.drawBlindOverlay(blindRem);
     }
 
     // 플래시 이펙트

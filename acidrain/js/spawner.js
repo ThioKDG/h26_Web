@@ -12,7 +12,6 @@ export class Spawner {
     this.baseSpeed = 0.8;       // 기본 낙하 속도
     this.active = false;
     this.crazyMode = false;
-    this._boostMul = 1;         // 패널티 가속 배수 (1 = 정상)
 
     // 크레이지 모드 전용 단어 풀: medium + hard 중 4글자 이상만
     this._crazyPool = [
@@ -34,19 +33,9 @@ export class Spawner {
     ].filter((w) => w && w.length >= 4);
   }
 
-  // 게임 중 크레이지 토글 시도 시 호출됨 → 속도 + 생성 빈도 증가
-  // 최대 3배까지만 누적, { mul, capped } 반환
-  boostDifficulty(amount = 0.25) {
-    const MAX = 3;
-    const prev = this._boostMul;
-    this._boostMul = Math.min(MAX, this._boostMul + amount);
-    return { mul: this._boostMul, capped: prev === MAX };
-  }
-
   start() {
     this.active = true;
     this.elapsed = this.interval; // 시작하자마자 첫 단어 생성
-    this._boostMul = 1;           // 새 게임 시작 시 패널티 초기화
   }
 
   stop() {
@@ -128,19 +117,16 @@ export class Spawner {
     // 레벨 오를수록 생성 빈도 증가 (최소 1초)
     const base = Math.max(1000, 3000 - (level - 1) * 300);
     // 크레이지 모드: 생성 주기 30% 단축
-    const withCrazy = this.crazyMode ? base * 0.7 : base;
-    // 패널티 부스트: 배수만큼 주기 단축, 최소 400ms 보장
-    return Math.max(400, withCrazy / this._boostMul);
+    return this.crazyMode ? base * 0.7 : base;
   }
 
   _getSpeed(level) {
     // 레벨 오를수록 속도 증가 + 약간의 랜덤성
     const base = this.baseSpeed + (level - 1) * 0.3;
     const random = (Math.random() - 0.5) * 0.4;
-    const speed = Math.max(0.5, base + random);
+    return Math.max(0.5, base + random);
     // 크레이지 모드 가속은 매 프레임 word.update에서 동적으로 곱해짐
     // (getCrazySpeedMultiplier 참고)
-    return speed * this._boostMul;
   }
 
   // 크레이지 모드 실시간 속도 배수 (시간에 따라 진동 → 정신없는 효과)

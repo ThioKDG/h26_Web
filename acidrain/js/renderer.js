@@ -370,6 +370,44 @@ export class Renderer {
     ctx.restore();
   }
 
+  // 블라인드 패널티 — 화면을 어둡게 덮고 카운트다운만 표시
+  drawBlindOverlay(remainingMs) {
+    const ctx = this.ctx;
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+
+    ctx.save();
+    // 거의 새까만 오버레이로 단어/배경을 가림
+    ctx.fillStyle = 'rgba(5, 5, 10, 0.88)';
+    ctx.fillRect(0, 0, w, h);
+
+    // 가장자리는 더 진하게 — 비네트 효과로 압박감 강화
+    const vignette = ctx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.15,
+      w / 2, h / 2, Math.max(w, h) * 0.75
+    );
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
+
+    // 카운트다운 큰 글자
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold 44px ${this.fonts}`;
+    ctx.fillStyle = '#ff6666';
+    ctx.shadowColor = '#ff0000';
+    ctx.shadowBlur = 32;
+    ctx.fillText(`👁 BLIND ${(remainingMs / 1000).toFixed(1)}s`, w / 2, h / 2 - 20);
+
+    // 부연 설명
+    ctx.font = `15px ${this.fonts}`;
+    ctx.fillStyle = '#ffaaaa';
+    ctx.shadowBlur = 0;
+    ctx.fillText('크레이지 모드를 함부로 끄지 마세요', w / 2, h / 2 + 30);
+    ctx.restore();
+  }
+
   // 시간정지 파워업 활성 시 푸른 오버레이 + 잔여 시간
   drawFreezeOverlay(remainingMs) {
     const ctx = this.ctx;

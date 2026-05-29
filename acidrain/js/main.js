@@ -29,6 +29,12 @@ async function main() {
   // 첫 방문 사용자에게만 튜토리얼 표시 (이후 자동 생략)
   const tutorial = new Tutorial();
   tutorial.showIfFirstVisit();
+
+  // 디버그: 콘솔에서 `showTutorial()` 호출하면 언제든 다시 표시 가능
+  window.showTutorial = () => {
+    localStorage.removeItem('acidrain_tutorial_done');
+    tutorial.show();
+  };
 }
 
 main();
