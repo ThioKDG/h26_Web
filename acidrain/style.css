@@ -175,7 +175,7 @@ html, body {
   animation: comboPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── 메시지 표시 ──────────────────────── */
+/* ── 메시지 표시 (상단 중앙) ── */
 #message-display {
   position: fixed;
   top: 80px;
@@ -190,6 +190,7 @@ html, body {
   pointer-events: none;
   transition: opacity 0.3s ease;
   white-space: nowrap;
+  max-width: calc(100vw - 280px);   /* 우측 버튼 컬럼(약 236px)과 겹치지 않도록 */
 }
 
 #message-display.visible {
@@ -241,20 +242,20 @@ html, body {
   box-shadow: 0 0 50px var(--accent-glow);
 }
 
-/* ── 상단 우측 액션 버튼 공통 (크레이지/프로그래머/언어 토글 + 내 단어 관리) ── */
+/* ── 상단 우측 액션 버튼 공통 (세로 스택 정렬) ── */
 #crazy-toggle,
 #programmer-toggle,
 #language-toggle,
 #open-word-editor {
   position: fixed;
-  top: 100px;                  /* HUD 아래 여유 공간 확보 */
+  right: 16px;                 /* 모두 우측 끝에 정렬 */
   z-index: 25;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  width: 220px;                /* 동일 너비 고정 */
-  height: 42px;                /* 동일 높이 고정 */
+  width: 220px;
+  height: 42px;
   padding: 0 18px;
   line-height: 1;
   font-family: 'Orbitron', monospace;
@@ -280,13 +281,13 @@ html, body {
   border-color: var(--accent);
 }
 
-/* 위치: 우측에서 좌측으로 — 크레이지, 프로그래머, 언어, 단어 관리 */
-#crazy-toggle      { right: 16px; }
-#programmer-toggle { right: 252px; }   /* 16 + 220 + 16 = 252 */
-#language-toggle   { right: 488px; }   /* 252 + 220 + 16 = 488 */
+/* 세로 스택: HUD(~70px) 아래부터 차곡차곡 (42px 버튼 + 8px 간격) */
+#crazy-toggle      { top: 78px; }   /* 1번 */
+#programmer-toggle { top: 128px; }  /* 2번 (78 + 42 + 8) */
+#language-toggle   { top: 178px; }  /* 3번 (128 + 42 + 8) */
 #open-word-editor  {
-  right: 724px;                        /* 488 + 220 + 16 = 724 */
-  display: none;                       /* JS가 idle/gameover에서만 보이게 함 */
+  top: 228px;                       /* 4번 (178 + 42 + 8) */
+  display: none;                    /* JS가 idle/gameover에서만 보이게 함 */
 }
 
 /* 프로그래머 모드 토글: 항상 보임, 모노스페이스 폰트로 아이콘 표현 */
